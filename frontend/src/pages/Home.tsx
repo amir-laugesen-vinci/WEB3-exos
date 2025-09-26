@@ -10,9 +10,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const host = import.meta.env.VITE_API_URL || 'http://unknown-api-url.com';
   const sendApiRequestandHandleError = async (method: string = 'GET', path: string, body?: any) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/${path}`, {
+      const response = await fetch(`${host}/api/${path}`, {
         method: method,
         headers: body ? { 'Content-Type': 'application/json' } : {},
         body: body ? JSON.stringify(body) : null,
