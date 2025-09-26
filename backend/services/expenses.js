@@ -1,27 +1,32 @@
-const fs = require('fs');
-const path = require('path');
 
-const EXPENSES_FILE_PATH = path.join(__dirname, '../data/expenses.json');
-const EXPENSES_INIT_FILE_PATH = path.join(__dirname, '../data/expenses.init.json');
+const { PrismaClient } = require('../generated/prisma');
+const prisma = new PrismaClient();
 
-function getAllExpenses() {
-  const data = fs.readFileSync(EXPENSES_FILE_PATH, 'utf8');
-  return JSON.parse(data);
+async function getAllExpenses() {
+  return await prisma.expense.findMany();
 }
 
-function addExpense(expense) {
-  const expenses = getAllExpenses();
-  expenses.push(expense);
-
-  const updatedExpenses = JSON.stringify(expenses, null, 2);
-  fs.writeFileSync(EXPENSES_FILE_PATH, updatedExpenses);
-  return expense;
+async function addExpense(expense) {
+  return await prisma.expense.create({ data: expense });
 }
 
-function resetExpenses() {
-  const initData = fs.readFileSync(EXPENSES_INIT_FILE_PATH, 'utf8');
-  fs.writeFileSync(EXPENSES_FILE_PATH, initData);
-  return JSON.parse(initData);
+// resetExpenses n'a plus de sens avec la base, on peut le désactiver ou le réécrire si besoin
+async function resetExpenses() {
+  // Optionnel : supprimer toutes les dépenses et réinsérer celles du fichier init
+  const fs = require('fs');
+  const path = require('path');
+  const EXPENSES_INIT_FILE_PATH = path.join(__dirname, '../data/expenses.init.json');
+  const initData = JSON.parse(fs.readFileSync(EXPENSES_INIT_FILE_PATH, 'utf8'));
+  await prisma.expense.deleteMany();
+  await prisma.expense.createMany({
+    data: initData.map(e => ({
+      date: new Date(e.date),
+      description: e.description,
+      payer: e.payer,
+      amount: e.amount
+    }))
+  });
+  return await prisma.expense.findMany();
 }
 
 module.exports = {
